@@ -1,27 +1,96 @@
-<?php<?php
+<?php
 /**
- * Profile Model - Lấy và cập nhật thông tin cá nhân của User hiện tại
+ * Profile Model
  */
 
-// Lấy thông tin chi tiết hồ sơ bằng cách JOIN bảng users và employees
-function getUserProfile($conn, $userId) {
-    $sql = "SELECT u.id, u.username, e.full_name, e.phone_number, d.department_name, p.position_name 
-            FROM users u
-            LEFT JOIN employees e ON u.id = e.user_id
-            LEFT JOIN departments d ON e.department_id = d.id
-            LEFT JOIN positions p ON e.position_id = p.id
-            WHERE u.id = ?";
-            
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $userId);
-    $stmt->execute();
-    return $stmt->get_result()->fetch_assoc();
-}
+class ProfileModel
+{
+    private $db;
 
-// Cho phép nhân viên tự cập nhật số điện thoại của mình
-function updateProfilePhone($conn, $userId, $phoneNumber) {
-    $sql = "UPDATE employees SET phone_number = ? WHERE user_id = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("si", $phoneNumber, $userId);
-    return $stmt->execute();
+    public function __construct($db)
+    {
+        $this->db = $db;
+    }
+
+    /**
+     * Lấy thông tin người dùng
+     */
+    public function getUserProfile($id)
+    {
+        $sql = "SELECT
+                    id,
+                    username,
+                    fullname,
+                    email,
+                    phone,
+                    role,
+                    created_at
+                FROM users
+                WHERE id = ?";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+
+        $result = $stmt->get_result();
+
+        $user = $result->fetch_assoc();
+
+        $stmt->close();
+
+        return $user;
+    }
+
+    /**
+     * Cập nhật thông tin
+     */
+    public function updateProfile($id, $fullname, $email, $phone)
+    {
+        $sql = "UPDATE users
+                SET
+                    fullname=?,
+                    email=?,
+                    phone=?
+                WHERE id=?";
+
+        $stmt = $this->db->prepare($sql);
+
+        $stmt->bind_param(
+            "sssi",
+            $fullname,
+            $email,
+            $phone,
+            $id
+        );
+
+        $result = $stmt->execute();
+
+        $stmt->close();
+
+        return $result;
+    }
+
+    /**
+     * Đổi mật khẩu
+     */
+    public function changePassword($id, $password)
+    {
+        $sql = "UPDATE users
+                SET password=?
+                WHERE id=?";
+
+        $stmt = $this->db->prepare($sql);
+
+        $stmt->bind_param(
+            "si",
+            $password,
+            $id
+        );
+
+        $result = $stmt->execute();
+
+        $stmt->close();
+
+        return $result;
+    }
 }

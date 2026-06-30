@@ -3,38 +3,105 @@
  * Profile Controller
  */
 
-if (!isset($_SESSION["user_id"])) {
-    header("Location: ../../login.php");
-    exit();
-}
+require_once __DIR__ . '/profile_model.php';
 
-require_once "profile-model.php";
+class ProfileController
+{
+    private $model;
 
-function handleUpdateProfile($conn, $userId) {
-    $errors = [];
-    
-    if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"]) && $_POST["action"] === "update_profile") {
-        $phoneNumber = trim($_POST["phone_number"] ?? "");
-
-        // Validation số điện thoại cơ bản
-        if (empty($phoneNumber)) {
-            $errors["phone_number"] = "Số điện thoại không được để trống.";
-        } elseif (!preg_match('/^[0-9]{10}$/', $phoneNumber)) {
-            $errors["phone_number"] = "Số điện thoại phải gồm 10 chữ số.";
-        }
-
-        if (empty($errors)) {
-            try {
-                if (updateProfilePhone($conn, $userId, $phoneNumber)) {
-                    header("Location: profile-view.php?status=updated");
-                    exit();
-                }
-            } catch (Exception $e) {
-                error_log("Lỗi Update Profile: " . $e->getMessage());
-                $errors["system"] = "Không thể cập nhật hồ sơ.";
-            }
-        }
+    public function __construct($db)
+    {
+        $this->model = new ProfileModel($db);
     }
-    
-    return $errors;
+
+    /**
+     * Hiển thị thông tin Profile
+     */
+    public function index()
+    {
+        // Nếu chưa có session thì tạm dùng user id = 1
+        // Sau này khi có Login thì thay bằng:
+        // $userId = $_SESSION['user_id'];
+
+        $userId = $_SESSION['user_id'] ?? 1;
+
+        $user = $this->model->getUserProfile($userId);
+
+        if (!$user) {
+            $_SESSION['error'] = "Không tìm thấy thông tin người dùng.";
+            return null;
+        }
+
+        return $user;
+    }
+
+    /**
+     * Cập nhật hồ sơ
+     */
+    public function update()
+    {
+        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+            return;
+        }
+
+        $userId = $_SESSION['user_id'] ?? 1;
+
+        $fullname = trim($_POST['fullname']);
+        $email = trim($_POST['email']);
+        $phone = trim($_POST['phone']);
+
+        if (empty($fullname)) {
+            $_SESSION['error'] = "Họ tên không được để trống.";
+            return;
+        }
+
+        $result = $this->model->updateProfile(
+            $userId,
+            $fullname,
+            $email,
+            $phone
+        );
+
+        if ($result) {
+            $_SESSION['success'] = "Cập nhật hồ sơ thành công.";
+        } else {
+            $_SESSION['error'] = "Cập nhật thất bại.";
+        }
+
+        header("Location: profile.php");
+        exit;
+    }
+
+    /**
+     * Đổi mật khẩu
+     */
+    public function changePassword()
+    {
+        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+            return;
+        }
+
+        $userId = $_SESSION['user_id'] ?? 1;
+
+        $newPassword = trim($_POST['new_password']);
+
+        if (empty($newPassword)) {
+            $_SESSION['error'] = "Mật khẩu mới không được để trống.";
+            return;
+        }
+
+        $result = $this->model->changePassword(
+            $userId,
+            $newPassword
+        );
+
+        if ($result) {
+            $_SESSION['success'] = "Đổi mật khẩu thành công.";
+        } else {
+            $_SESSION['error'] = "Đổi mật khẩu thất bại.";
+        }
+
+        header("Location: profile.php");
+        exit;
+    }
 }

@@ -1,44 +1,138 @@
 <?php
-<div class="container-fluid py-4">
-    <h2 class="mb-4">Hồ sơ cá nhân</h2>
-    <div class="row">
-        <div class="col-lg-4">
-            <div class="card shadow-sm border-0 text-center p-4">
-                <div class="mb-3">
-                    <img src="https://ui-avatars.com/api/?name=Quang+Minh&background=0D6EFD&color=fff&size=128" 
-                         class="rounded-circle shadow" alt="Avatar">
-                </div>
-                <h4>Nguyễn Quang Minh</h4>
-                <p class="text-muted">Organization & Profile Engineer</p>
-                <div class="badge bg-success">Đang làm việc</div>
-            </div>
+/**
+ * Profile View
+ */
+
+require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../config/session.php';
+require_once __DIR__ . '/../../middleware/auth.middleware.php';
+
+require_once __DIR__ . '/profile_controller.php';
+
+$controller = new ProfileController($conn);
+$user = $controller->index();
+
+include __DIR__ . '/../../includes/header.php';
+include __DIR__ . '/../../includes/sidebar.php';
+?>
+
+<div class="container-fluid mt-4">
+
+    <div class="card shadow">
+
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">
+                <i class="bi bi-person-circle"></i>
+                Hồ sơ cá nhân
+            </h4>
         </div>
-        
-        <div class="col-lg-8">
-            <div class="card shadow-sm border-0">
-                <div class="card-body p-4">
-                    <h5 class="border-bottom pb-3 mb-4">Thông tin cơ bản</h5>
-                    <div class="row mb-3">
-                        <div class="col-sm-4 text-muted">Mã nhân viên:</div>
-                        <div class="col-sm-8 fw-bold">NV-2026-003</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-sm-4 text-muted">Phòng ban:</div>
-                        <div class="col-sm-8">Phòng Kỹ thuật</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-sm-4 text-muted">Chức vụ:</div>
-                        <div class="col-sm-8">Kỹ sư hệ thống</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-sm-4 text-muted">Số điện thoại:</div>
-                        <div class="col-sm-8">0901 234 567</div>
-                    </div>
-                    <div class="mt-4">
-                        <a href="profile-edit.php" class="btn btn-primary btn-sm">Chỉnh sửa hồ sơ</a>
-                    </div>
+
+        <div class="card-body">
+
+            <?php if(isset($_SESSION['success'])): ?>
+
+                <div class="alert alert-success">
+                    <?= $_SESSION['success']; ?>
                 </div>
+
+                <?php unset($_SESSION['success']); ?>
+
+            <?php endif; ?>
+
+            <?php if(isset($_SESSION['error'])): ?>
+
+                <div class="alert alert-danger">
+                    <?= $_SESSION['error']; ?>
+                </div>
+
+                <?php unset($_SESSION['error']); ?>
+
+            <?php endif; ?>
+
+
+            <?php if($user): ?>
+
+            <div class="row">
+
+                <div class="col-md-3 text-center">
+
+                    <img
+                        src="https://ui-avatars.com/api/?name=<?= urlencode($user['fullname']); ?>&size=200"
+                        class="img-thumbnail rounded-circle mb-3">
+
+                    <h5><?= htmlspecialchars($user['fullname']); ?></h5>
+
+                    <span class="badge bg-primary">
+                        <?= htmlspecialchars($user['role']); ?>
+                    </span>
+
+                </div>
+
+
+                <div class="col-md-9">
+
+                    <table class="table table-bordered">
+
+                        <tr>
+                            <th width="200">Username</th>
+                            <td><?= htmlspecialchars($user['username']); ?></td>
+                        </tr>
+
+                        <tr>
+                            <th>Họ tên</th>
+                            <td><?= htmlspecialchars($user['fullname']); ?></td>
+                        </tr>
+
+                        <tr>
+                            <th>Email</th>
+                            <td><?= htmlspecialchars($user['email']); ?></td>
+                        </tr>
+
+                        <tr>
+                            <th>Số điện thoại</th>
+                            <td><?= htmlspecialchars($user['phone']); ?></td>
+                        </tr>
+
+                        <tr>
+                            <th>Quyền</th>
+                            <td><?= htmlspecialchars($user['role']); ?></td>
+                        </tr>
+
+                        <tr>
+                            <th>Ngày tạo</th>
+                            <td><?= date("d/m/Y H:i", strtotime($user['created_at'])); ?></td>
+                        </tr>
+
+                    </table>
+
+                    <a href="profile-edit.php"
+                       class="btn btn-primary">
+
+                        <i class="bi bi-pencil-square"></i>
+
+                        Chỉnh sửa hồ sơ
+
+                    </a>
+
+                    <a href="change-password.php"
+                       class="btn btn-warning">
+
+                        <i class="bi bi-key"></i>
+
+                        Đổi mật khẩu
+
+                    </a>
+
+                </div>
+
             </div>
+
+            <?php endif; ?>
+
         </div>
+
     </div>
+
 </div>
+
+<?php include __DIR__ . '/../../includes/footer.php'; ?>
